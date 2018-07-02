@@ -37,9 +37,9 @@ class LabelledUnorderedRootedTree(object):
     #them immutable, by manually making it raise an error to try to modify an
     #instance of this class.
     def __setattr__(self, *args):
-        raise TypeError
+        raise TypeError('Trees are immutable objects!')
     def __delattr__(self, *args):
-        raise TypeError
+        raise TypeError('Trees are immutable objects!')
 
     def __hash__(self):
         return self.hash_precomputed
@@ -95,6 +95,9 @@ which have out-degree 0 (i.e. the root only counts as a leaf when it has no subt
         else:
             return sum( [count*T.leaves for T,count in self.subtree_counts.items()] )
 
+    def is_leaf(self):
+        return len(self.subtree_counts) == 0
+
     def count_nodes_recursive(self):
         if len(self.subtree_counts) == 0:
             return 1
@@ -127,6 +130,10 @@ the root). This corresponds to the number of 'children' that a node has.'''
 
     def getSubtrees_unique(self):
         return tuple(self.subtree_counts.keys())
+
+    def getLeavesBelowRoot(self):
+        sum([(tree,) * count for tree, count in self.subtree_counts.items() if tree.is_leaf()], ())
+
 
 def labelledUnorderedRootedTree_from_subtrees(subtrees):
     return LabelledUnorderedRootedTree(subtree_counter = Counter(subtrees))
