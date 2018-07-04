@@ -132,7 +132,7 @@ the root). This corresponds to the number of 'children' that a node has.'''
         return tuple(self.subtree_counts.keys())
 
     def getLeavesBelowRoot(self):
-        sum([(tree,) * count for tree, count in self.subtree_counts.items() if tree.is_leaf()], ())
+        return sum([(tree,) * count for tree, count in self.subtree_counts.items() if tree.is_leaf()], ())
 
 
 def labelledUnorderedRootedTree_from_subtrees(subtrees):
