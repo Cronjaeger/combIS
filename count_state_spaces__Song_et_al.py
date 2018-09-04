@@ -24,7 +24,7 @@ class configuration(object):
             raise ValueError(msg)
 
         self.multiplicities = tuple(multiplicities)
-        self.haplotypes_with_counts__sorted = sorted( zip(self.haplotypes, self.multiplicities))
+        self.haplotypes_with_counts__sorted = tuple(sorted(zip(self.haplotypes, self.multiplicities)))
 
         #Sort haplotypes and multiplicities (according to haplotypes)
         self.haplotypes, self.multiplicities = zip(*self.haplotypes_with_counts__sorted)
@@ -52,12 +52,14 @@ class configuration(object):
 def __removeEntry__(l, i):
     if i >= len(l):
         raise IndexError('Index %i out of range for input list (which has %i elements)'%(i,len(l)))
-    return tuple(filter(lambda x: l.index(x) != i, l))
+    return tuple(l[j] for j in xrange(len(l)) if j != i)
+    #return tuple(filter(lambda x: l.index(x) != i, l))
 
 def __replaceEntry__(l, i, newEntry):
     if i >= len(l):
         raise IndexError('Index %i out of range for input list (which has %i elements)'%(i,len(l)))
-    return tuple( (x if l.index(x) != i else newEntry) for x in l)
+    return tuple(map(lambda j: l[j] if j!= i else newEntry, xrange(len(l))))
+    #return tuple( (x if l.index(x) != i else newEntry) for x in l)
 
 # def D(conf, i):
 #     new_haplotypes = __removeEntry__(conf.haplotypes, i)
@@ -71,7 +73,7 @@ def M(conf,i):
 
     #find which haplotype is segregating at position i
     index_of_segregating_haplotype = 0
-    while conf.haplotypes[index_of_segregating_haplotype][i] == 0 and index_of_segregating_haplotype < len(conf.haplotypes):
+    while index_of_segregating_haplotype < len(conf.haplotypes) and conf.haplotypes[index_of_segregating_haplotype][i] == 0:
         index_of_segregating_haplotype += 1
     if index_of_segregating_haplotype == len(conf.haplotypes): ##check if we terminated because no seg. site was found
         msg = 'Site %i is not segregating in the input configuration'%i
@@ -81,7 +83,7 @@ def M(conf,i):
 
     #scan existing haplotypes to see if any of them match the new haplotype
     match_index = 0
-    while conf.haplotypes[match_index] != new_haplotype and match_index < len(conf.haplotypes):
+    while match_index < len(conf.haplotypes) and conf.haplotypes[match_index] != new_haplotype:
         match_index += 1
 
     if match_index == len(conf.haplotypes): #no match found
@@ -92,7 +94,11 @@ def M(conf,i):
         new_multiplicities = __removeEntry__(new_multiplicities, index_of_segregating_haplotype)
         new_haplotype_list = __removeEntry__(conf.haplotypes, index_of_segregating_haplotype)
 
-    return configuration(new_haplotype_list, new_multiplicities)
+    try:
+        new_conf = configuration(new_haplotype_list, new_multiplicities)
+        return new_conf
+    except ValueError:
+        print new_haplotype_list, new_multiplicities
 
 def compute_product(l):
     return reduce(lambda x,y: x*y, l, 1)
@@ -128,3 +134,51 @@ def song_et_al_algorithm(starting_configuration):
                 unresolved_nodes.add(neighbour)
 
     return sum(map(compute_product, [conf.multiplicities for conf in G.keys()]))
+
+
+def test_HEIN_DATA():
+    haplotypes = [(1, 1, 0, 0),
+                  (1, 1, 0, 1),
+                  (0, 0, 1, 0),
+                  (0, 0, 0, 0)]
+    multiplicities = (1,1,2,1)
+    conf = configuration(haplotypes, multiplicities)
+    states = song_et_al_algorithm(conf)
+
+    print 'the configuration\n%s\nhas %i ancestral states.'%(str(conf), states)
+
+def test_mithocondiral_data():
+    haplotypes = [
+        (1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+        (1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0),
+        (0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+        (0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        (0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+        (0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+        (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1),
+        (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1),
+        (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1),
+        (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1),
+        (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+        (0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        (0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0)
+    ]
+    multiplicities_1 = (2, 2, 1, 3, 19, 1, 1, 1, 4, 8, 5, 4, 3, 1)
+    multiplicities_2 = (1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+    conf_1 = configuration(haplotypes, multiplicities_1)
+    conf_2 = configuration(haplotypes, multiplicities_2)
+    states_1 = song_et_al_algorithm(conf_1)
+    states_2 = song_et_al_algorithm(conf_2)
+
+    print 'the configuration\n%s\nhas %i ancestral states.' % (str(conf_1), states_1)
+    print ''
+    print 'the configuration\n%s\nhas %i ancestral states.' % (str(conf_2), states_2)
+
+
+if __name__ == '__main__':
+    print 'considering test data-sets...'
+    print ''
+    test_HEIN_DATA()
+    print ''
+    test_mithocondiral_data()
